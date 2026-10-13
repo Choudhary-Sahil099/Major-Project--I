@@ -10,7 +10,7 @@ venv.bak/
 secrets.json
 credentials.json
 *.pem
-*.key
+*.key~
 
 # ==================================
 # 2. Machine Learning Artifacts
