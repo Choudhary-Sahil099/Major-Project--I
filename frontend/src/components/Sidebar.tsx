@@ -1,3 +1,4 @@
+
 import type React from 'react'
 import {
   BatteryCharging,
@@ -26,6 +27,8 @@ export default function Sidebar({
   apiOnline,
   modelLoaded,
 }: SidebarProps) {
+  const pageNavigation = ['History', 'About']
+
   return (
     <aside className="sidebar">
       <a
@@ -55,9 +58,16 @@ export default function Sidebar({
         {navigation.map(({ label, icon: Icon }) => (
           <button
             key={label}
-            className={`nav-item ${activeNav === label ? 'nav-active' : ''}`}
+            className={`nav-item ${
+              activeNav === label ? 'nav-active' : ''
+            }`}
             onClick={() => {
               setActiveNav(label)
+
+              if (pageNavigation.includes(label)) {
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+                return
+              }
 
               const target =
                 label === 'Diagnostics'

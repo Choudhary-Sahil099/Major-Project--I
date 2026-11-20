@@ -1,30 +1,38 @@
 import { useEffect, useState } from "react";
-import {submitDiagnosis } from "./services/diagnosticsApi";
-import DashboardOverview from './components/DashboardOverview'
-import { useApiHealth } from './hooks/useApiHealth'
+import { submitDiagnosis } from "./services/diagnosticsApi";
+import DashboardOverview from "./components/DashboardOverview";
+import { useApiHealth } from "./hooks/useApiHealth";
 import DiagnosticForm from "./components/DiagnosticForm"; // if it don't work try only changing the file name to DiagnosticForm
 import DiagnosticResults from "./components/DiagnosticResult";
 import type { Prediction } from "./types";
-import Sidebar from './components/Sidebar'
+import Sidebar from "./components/Sidebar";
+import { saveHistory } from "./services/historyStorage";
+import type { HistoryRecord } from "./types/history";
 import "./App.css";
 import {
   Activity,
   LayoutDashboard,
   ScanEye,
+  RotateCcwClock,
+  Info,
 } from "lucide-react";
 
 import Topbar from "./components/Topbar";
 import ExplainabilityPanel from "./components/ExplainabilityPanel";
-import PageFooter from './components/PageFooter'
+import PageFooter from "./components/PageFooter";
+import About from "./components/About";
+import History from "./components/History";
 const navigation = [
   { label: "Overview", icon: LayoutDashboard },
   { label: "Diagnostics", icon: Activity },
   { label: "Explainable AI", icon: ScanEye },
+  { label: "History", icon: RotateCcwClock },
+  { label: "About", icon: Info },
 ];
 
 function App() {
   const [activeNav, setActiveNav] = useState("Overview");
-  const { apiOnline, modelLoaded } = useApiHealth()
+  const { apiOnline, modelLoaded } = useApiHealth();
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
   const [isDragging, setIsDragging] = useState(false);
@@ -109,6 +117,15 @@ function App() {
       );
 
       setResult(prediction);
+      const historyRecord: HistoryRecord = {
+        id: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+        mode,
+        imageName: image.name,
+        prediction,
+      };
+
+      saveHistory(historyRecord);
     } catch (err) {
       setError(
         err instanceof Error
@@ -143,53 +160,60 @@ function App() {
 
   return (
     <div className="app-shell">
-     <Sidebar
-      navigation={navigation}
-      activeNav={activeNav}
-      setActiveNav={setActiveNav}
-      apiOnline={apiOnline}
-      modelLoaded={modelLoaded}
-    />
+      <Sidebar
+        navigation={navigation}
+        activeNav={activeNav}
+        setActiveNav={setActiveNav}
+        apiOnline={apiOnline}
+        modelLoaded={modelLoaded}
+      />
 
       <main className="main-content">
-        <Topbar 
-          activeNav={activeNav} 
-          apiOnline={apiOnline}
-        />
+        <Topbar activeNav={activeNav} apiOnline={apiOnline} />
 
         <div className="page-content">
-          <DashboardOverview
-              result={result}
-              riskColor={riskColor}
-          />
+          {activeNav === "History" ? (
+            <History />
+          ) : activeNav === "About" ? (
+            <About />
+          ) : (
+            <>
+              <DashboardOverview result={result} riskColor={riskColor} />
 
-          <section id="diagnostics" className="workspace-grid">
-            <DiagnosticForm
-                image={image}
-                imagePreview={imagePreview}
-                isDragging={isDragging}
-                telemetry={telemetry}
-                mode={mode}
-                error={error}
-                loading={loading}
-                apiOnline={apiOnline}
-                modelLoaded={modelLoaded}
-                setImage={setImage}
-                setIsDragging={setIsDragging}
-                setTelemetry={setTelemetry}
-                setMode={setMode}
-                handleImageSelection={handleImageSelection}
-                runDiagnosis={runDiagnosis}
-            />
+              <section id="diagnostics" className="workspace-grid">
+                <DiagnosticForm
+                  image={image}
+                  imagePreview={imagePreview}
+                  isDragging={isDragging}
+                  telemetry={telemetry}
+                  mode={mode}
+                  error={error}
+                  loading={loading}
+                  apiOnline={apiOnline}
+                  modelLoaded={modelLoaded}
+                  setImage={setImage}
+                  setIsDragging={setIsDragging}
+                  setTelemetry={setTelemetry}
+                  setMode={setMode}
+                  handleImageSelection={handleImageSelection}
+                  runDiagnosis={runDiagnosis}
+                />
 
-            <DiagnosticResults
-              result={result}
-              riskColor={riskColor}
-              probabilities={probabilities}
-            />
-          </section>
+                <DiagnosticResults
+                  result={result}
+                  riskColor={riskColor}
+                  probabilities={probabilities}
+                />
+              </section>
 
-          <ExplainabilityPanel result={result} attributions={attributions}/>
+              <section id="explainability">
+                <ExplainabilityPanel
+                  result={result}
+                  attributions={attributions}
+                />
+              </section>
+            </>
+          )}
 
           <PageFooter apiOnline={apiOnline} />
         </div>
